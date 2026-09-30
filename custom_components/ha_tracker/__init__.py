@@ -20,6 +20,7 @@ from homeassistant.components.lovelace.resources import (
 )
 from homeassistant.components.panel_custom import async_register_panel
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, CoreState
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
@@ -36,6 +37,7 @@ from .api.reverse_geocode import async_init_reverse_cache
 # --------------------------------------------------------------------------- #
 
 DOMAIN = __package__.split(".")[-1]
+PLATFORMS = (Platform.SENSOR,)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -145,6 +147,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # ------------------------------------------------------------------ #
     await async_init_reverse_cache(hass)
 
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     return True
 
 
@@ -156,8 +160,10 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, _entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Desinstalar completamente la integración."""
+
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     # Eliminar zonas
     await unregister_zones(hass)
@@ -174,7 +180,7 @@ async def async_unload_entry(hass: HomeAssistant, _entry: ConfigEntry) -> bool:
     # Limpiar datos
     hass.data.pop(DOMAIN, None)
 
-    return True
+    return unload_ok
 
 # --------------------------------------------------------------------------- #
 #  MANEJO DEL RECURSO LOVELACE                                                #
