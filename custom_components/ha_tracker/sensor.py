@@ -235,7 +235,9 @@ class HATrackerSensor(CoordinatorEntity[HATrackerCoordinator], SensorEntity):
     def available(self) -> bool:
         """Mark the sensor unavailable when its person or tracker is gone."""
         person_data = (self.coordinator.data or {}).get(self._person_id)
-        return bool(person_data and person_data.get("tracker_entity"))
+        return super().available and bool(
+            person_data and person_data.get("tracker_entity")
+        )
 
     @property
     def native_value(self) -> str | float | None:
